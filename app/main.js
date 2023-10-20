@@ -5,6 +5,14 @@ const util = require("util");
 // - decodeBencode("5:hello") -> "hello"
 // - decodeBencode("10:hello12345") -> "hello12345"
 function decodeBencode(bencodedValue) {
+  if (typeof bencodedValue !== "string") {
+    throw new Error("Only strings are supported at the moment");
+  }
+  // checking for numbers
+  if (bencodedValue.at(0) === "i" && bencodedValue.at(-1) === "e") {
+    return parseInt(bencodedValue.substring(1, bencodedValue.length - 1));
+  }
+  // strings
   if (!isNaN(bencodedValue[0])) {
     // Check if the first character is a digit
     const parts = bencodedValue.split(":");
