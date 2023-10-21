@@ -18,7 +18,7 @@ function consumeOnce(bencodedValue) {
         const parsedValue = parseInt(bencodedValue.substring(1, end));
         return {
             parsedValue,
-            rest: bencodedValue.substring(end),
+            rest: bencodedValue.substring(end + 1),
         };
     }
     // checking for strings
@@ -33,33 +33,21 @@ function consumeOnce(bencodedValue) {
     if (bencodedValue.at(0) === "l") {
         let unconsumed = bencodedValue.substring(1);
         const list = [];
-        while (true) {
+        while (unconsumed.at(0) !== "e") {
             const { parsedValue, rest } = consumeOnce(unconsumed);
             list.push(parsedValue);
-            if (rest.at(0) === "e") {
-                unconsumed = rest.substring(1);
-                return {
-                    parsedValue: list,
-                    rest: unconsumed,
-                };
-            }
-            else {
-                unconsumed = rest;
-            }
+            unconsumed = rest;
         }
+        return {
+            parsedValue: list,
+            rest: unconsumed.substring(1),
+        };
     }
     throw new Error("Datatype not yet supported");
 }
 function decodeBencode(bencodedValue) {
     const { parsedValue, rest } = consumeOnce(bencodedValue);
-    if (Array.isArray(parsedValue)) {
-        console.log(`[${parsedValue
-            .map((x) => (typeof x === "number" ? x : `"${x}"`))
-            .join(",")}]`);
-    }
-    else {
-        console.log(parsedValue);
-    }
+    return parsedValue;
 }
 function main() {
     const command = process.argv[2];
@@ -77,3 +65,4 @@ function main() {
     }
 }
 main();
+//# sourceMappingURL=main.js.map
