@@ -5,7 +5,8 @@ const node_fs_1 = require("node:fs");
 const decode_1 = require("./decode");
 function parseTorrent(filename) {
     const buf = (0, node_fs_1.readFileSync)(filename);
-    const data = buf.toString("utf8");
+    const data = buf.toString("ascii");
+    console.error(data);
     const dict = (0, decode_1.decodeBencode)(data);
     return dict;
 }

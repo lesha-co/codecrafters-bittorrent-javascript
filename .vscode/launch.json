@@ -11,7 +11,7 @@
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/app/main.js",
       "sourceMaps": true,
-      "args": ["decode", "l9:raspberryi896ee"],
+      "args": ["info", "codercat.torrent"],
       "outFiles": ["${workspaceFolder}/**/*.js"]
     }
   ]
