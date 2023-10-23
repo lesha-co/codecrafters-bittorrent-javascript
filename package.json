@@ -4,7 +4,7 @@
   "description": "[![progress-banner](https://backend.codecrafters.io/progress/bittorrent/ecab3aec-db4c-4151-b316-fba11e41fe7b)](https://app.codecrafters.io/users/lesha-co?r=2qF)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsc -w"
   },
   "keywords": [],
   "author": "",

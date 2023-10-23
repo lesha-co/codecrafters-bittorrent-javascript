@@ -11,7 +11,8 @@
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/app/main.js",
       "sourceMaps": true,
-      "args": ["info", "codercat.torrent"],
+      // "args": ["info", "sample2.torrent"],
+      "args": ["decode", "d3:foo9:blueberry5:helloi52ee"],
       "outFiles": ["${workspaceFolder}/**/*.js"]
     }
   ]
