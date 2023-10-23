@@ -26,10 +26,16 @@ export function infoTorrent(filename: string) {
 
   console.log(`Tracker URL: ${announce}`);
   console.log(`Length: ${info.length}`);
-
   const bencodedInfo = encode(info);
   const shasum = crypto.createHash("sha1");
   shasum.update(bencodedInfo);
   const hex = shasum.digest("hex");
   console.log(`Info Hash: ${hex}`);
+  console.log(`Piece Length: ${info["piece length"]}`);
+  console.log("Piece Hashes:");
+  const pieces = info.pieces;
+  const nPieces = pieces.length / 20;
+  for (let piece = 0; piece < nPieces; piece++) {
+    console.log(pieces.subarray(piece * 20, (piece + 1) * 20).toString("hex"));
+  }
 }
