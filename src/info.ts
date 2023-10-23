@@ -1,35 +1,36 @@
 import { readFileSync } from "node:fs";
 import { decode } from "./decode";
-import { TorrentFile, ensurebuffer, ensuredict, ensureinteger } from "./model";
-import { encode } from "./encode";
+import {
+  TorrentFile,
+  ensureBuffer,
+  ensureDict,
+  ensureInteger,
+  ensureString,
+  infoHash,
+} from "./model";
 
-import * as crypto from "node:crypto";
-
-function parseTorrent(filename: string): TorrentFile {
+export function parseTorrent(filename: string): TorrentFile {
   const data = readFileSync(filename);
   const dict = decode(data, false);
-  const _dict = ensuredict(dict);
-  const _dict_info = ensuredict(_dict.info);
+  const _dict = ensureDict(dict);
+  const _dict_info = ensureDict(_dict.info);
   return {
-    announce: ensurebuffer(_dict.announce).toString("ascii"),
+    announce: ensureString(_dict.announce),
     info: {
-      "piece length": ensureinteger(_dict_info["piece length"]),
-      length: ensureinteger(_dict_info.length),
-      name: ensurebuffer(_dict_info.name).toString("ascii"),
-      pieces: ensurebuffer(_dict_info.pieces),
+      "piece length": ensureInteger(_dict_info["piece length"]),
+      length: ensureInteger(_dict_info.length),
+      name: ensureString(_dict_info.name),
+      pieces: ensureBuffer(_dict_info.pieces),
     },
   };
 }
 
-export function infoTorrent(filename: string) {
-  const { announce, info } = parseTorrent(filename);
+export function infoTorrent(torrent: TorrentFile) {
+  const { announce, info } = torrent;
 
   console.log(`Tracker URL: ${announce}`);
   console.log(`Length: ${info.length}`);
-  const bencodedInfo = encode(info);
-  const shasum = crypto.createHash("sha1");
-  shasum.update(bencodedInfo);
-  const hex = shasum.digest("hex");
+  const hex = infoHash(torrent).toString("hex");
   console.log(`Info Hash: ${hex}`);
   console.log(`Piece Length: ${info["piece length"]}`);
   console.log("Piece Hashes:");

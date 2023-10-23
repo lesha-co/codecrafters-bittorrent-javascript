@@ -1,19 +1,24 @@
 import { decode } from "./decode";
-import { infoTorrent } from "./info";
+import { getPeers } from "./getPeers";
+import { infoTorrent, parseTorrent } from "./info";
 import * as fs from "node:fs";
-function main() {
+async function main() {
   const command = process.argv[2];
+  const argument = process.argv[3];
+  const argument2 = process.argv[4];
 
   if (command === "decode") {
-    const bencodedValue = process.argv[3];
-    console.log(
-      JSON.stringify(decode(Buffer.from(bencodedValue, "ascii"), true))
-    );
+    console.log(JSON.stringify(decode(Buffer.from(argument, "ascii"), true)));
   } else if (command === "info") {
-    infoTorrent(process.argv[3]);
+    infoTorrent(parseTorrent(argument));
+  } else if (command === "peers") {
+    const peers = await getPeers(parseTorrent(argument));
+    for (const peer of peers) {
+      console.log(peer);
+    }
   } else if (command === "save") {
-    const b = Buffer.from(process.argv[3], "hex");
-    fs.writeFileSync(process.argv[4], b);
+    const b = Buffer.from(argument, "hex");
+    fs.writeFileSync(argument2, b);
   } else {
     throw new Error(`Unknown command ${command}`);
   }

@@ -5,8 +5,8 @@ import {
   END,
   INTEGER_MARKER,
   LIST_MARKER,
-  ensurebuffer,
-  ensurestring,
+  ensureBuffer,
+  ensureString,
 } from "./model";
 
 function consumeSequence(
@@ -86,8 +86,8 @@ function consumeOnce(
     const dict: Record<string, any> = {};
     for (let i = 0; i < parsedValue.length; i += 2) {
       const key = stringifyBuffers
-        ? ensurestring(parsedValue[i])
-        : ensurebuffer(parsedValue[i]).toString("ascii");
+        ? ensureString(parsedValue[i])
+        : ensureBuffer(parsedValue[i]).toString("ascii");
 
       dict[key] = parsedValue[i + 1];
     }

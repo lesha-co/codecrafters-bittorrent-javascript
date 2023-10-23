@@ -51,8 +51,8 @@ function consumeOnce(bencodedValue, stringifyBuffers) {
         const dict = {};
         for (let i = 0; i < parsedValue.length; i += 2) {
             const key = stringifyBuffers
-                ? (0, model_1.ensurestring)(parsedValue[i])
-                : (0, model_1.ensurebuffer)(parsedValue[i]).toString("ascii");
+                ? (0, model_1.ensureString)(parsedValue[i])
+                : (0, model_1.ensureBuffer)(parsedValue[i]).toString("ascii");
             dict[key] = parsedValue[i + 1];
         }
         return {

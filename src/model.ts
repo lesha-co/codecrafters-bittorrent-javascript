@@ -1,3 +1,6 @@
+import { encode } from "./encode";
+import * as crypto from "node:crypto";
+
 export type Token =
   | string
   | Buffer
@@ -22,7 +25,15 @@ export type TorrentFile = {
   };
 };
 
-export function ensurestring(t: Token): string {
+export function infoHash(t: TorrentFile): Buffer {
+  const bencodedInfo = encode(t.info);
+  const shasum = crypto.createHash("sha1");
+  shasum.update(bencodedInfo);
+  const digest = shasum.digest();
+  return digest;
+}
+
+export function ensureString(t: Token): string {
   if (t instanceof Buffer) {
     return t.toString("ascii");
   }
@@ -31,7 +42,7 @@ export function ensurestring(t: Token): string {
   }
   throw new Error(" is not string");
 }
-export function ensuredict(t: Token): Record<string, Token> {
+export function ensureDict(t: Token): Record<string, Token> {
   if (
     t instanceof Buffer ||
     typeof t === "number" ||
@@ -42,15 +53,15 @@ export function ensuredict(t: Token): Record<string, Token> {
   }
   return t;
 }
-export function ensureinteger(t: Token): number {
+export function ensureInteger(t: Token): number {
   if (typeof t !== "number") {
     throw new Error(" is not number");
   }
   return t;
 }
-export function ensurebuffer(t: Token): Buffer {
+export function ensureBuffer(t: Token): Buffer {
   if (!(t instanceof Buffer)) {
-    throw new Error(" is not buf");
+    throw new Error(`${t} is not buf`);
   }
   return t;
 }
