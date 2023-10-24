@@ -1,7 +1,7 @@
 import { _main } from "./_main";
 
 async function _test(command: string, argument: string, expected: string) {
-  const result = await _main(command, argument);
+  const result = await _main(command, [argument]);
   console.log(
     result === expected ? "✅" : "❌",
     command,

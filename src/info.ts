@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { decode } from "./decode";
 import {
   TorrentFile,
@@ -9,8 +9,8 @@ import {
 } from "./model";
 import { toString, toHex } from "./compat";
 
-export function parseTorrent(filename: string): TorrentFile {
-  const data = readFileSync(filename);
+export async function parseTorrent(filename: string): Promise<TorrentFile> {
+  const data = await readFile(filename);
   const decodedData = decode(data);
   const _dict = ensureDict(decodedData);
   const _dict_info = ensureDict(_dict.info);

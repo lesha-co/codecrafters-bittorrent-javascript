@@ -1,4 +1,4 @@
-import { toString, readUInt16BE } from "./compat";
+import { toString, readUInt16BE, readUInt32BE } from "./compat";
 import { encode } from "./encode";
 import * as crypto from "node:crypto";
 
@@ -33,10 +33,6 @@ export type TorrentFile = {
     "piece length": number;
     pieces: Uint8Array;
   };
-};
-
-export type BittorrentPeer = {
-  id: string;
 };
 
 export class AddressInfo {

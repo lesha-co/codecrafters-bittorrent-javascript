@@ -10,6 +10,14 @@ export function toString(b: Uint8Array): string {
 export function readUInt16BE(arr: Uint8Array, offset: number): number {
   return (arr[offset] << 8) | arr[offset + 1];
 }
+export function readUInt32BE(arr: Uint8Array, offset: number): number {
+  return (
+    (arr[offset] << 24) |
+    (arr[offset + 1] << 16) |
+    (arr[offset + 2] << 8) |
+    arr[offset + 3]
+  );
+}
 
 export function toHex(arr: Uint8Array): string {
   const hexes = Array.from(arr).map((x) => {

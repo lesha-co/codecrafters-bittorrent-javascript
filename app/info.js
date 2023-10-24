@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.infoTorrent = exports.parseTorrent = void 0;
-const node_fs_1 = require("node:fs");
+const promises_1 = require("node:fs/promises");
 const decode_1 = require("./decode");
 const model_1 = require("./model");
 const compat_1 = require("./compat");
-function parseTorrent(filename) {
-    const data = (0, node_fs_1.readFileSync)(filename);
+async function parseTorrent(filename) {
+    const data = await (0, promises_1.readFile)(filename);
     const decodedData = (0, decode_1.decode)(data);
     const _dict = (0, model_1.ensureDict)(decodedData);
     const _dict_info = (0, model_1.ensureDict)(_dict.info);

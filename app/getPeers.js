@@ -11,10 +11,12 @@ async function getPeers(t) {
     const info_hash = (0, model_1.infoHash)(t);
     let info_hash_urle = "";
     for (let index = 0; index < info_hash.length; index++) {
+        let hex = info_hash[index].toString(16);
+        if (hex.length < 2)
+            hex = "0" + hex;
         info_hash_urle += "%";
-        info_hash_urle += info_hash[index].toString(16);
+        info_hash_urle += hex;
     }
-    console.error("INFO HASH LEN " + info_hash.length);
     const url = new URL(t.announce);
     // url.searchParams.append("info_hash", info_hash_urle);
     url.searchParams.append("peer_id", "00112233445566778899");
