@@ -23,7 +23,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stringifyBuffers = exports.readInteger = exports.fromBuffer = exports.toBuffer = exports.ensureBuffer = exports.ensureInteger = exports.ensureDict = exports.infoHash = exports.AddressInfo = exports.ASCIIDigit = exports.END = exports.DICT_MARKER = exports.LIST_MARKER = exports.INTEGER_MARKER = exports.COLON = void 0;
+exports.stringifyBuffers = exports.readInteger = exports.ensureU8A = exports.ensureInteger = exports.ensureDict = exports.infoHash = exports.AddressInfo = exports.ASCIIDigit = exports.END = exports.DICT_MARKER = exports.LIST_MARKER = exports.INTEGER_MARKER = exports.COLON = void 0;
+const compat_1 = require("./compat");
 const encode_1 = require("./encode");
 const crypto = __importStar(require("node:crypto"));
 exports.COLON = 0x3a; // ':'
@@ -52,11 +53,11 @@ class AddressInfo {
         const [addr, port] = s.split(":");
         return new AddressInfo(addr, parseInt(port, 10));
     }
-    static fromBuffer(b) {
+    static fromU8A(b) {
         if (b.length !== 6) {
-            throw new Error("Buffer must be of length 6");
+            throw new Error("Uint8Array must be of length 6");
         }
-        return new AddressInfo(b.subarray(0, 4).join("."), b.readUInt16BE(4));
+        return new AddressInfo(b.subarray(0, 4).join("."), (0, compat_1.readUInt16BE)(b, 4));
     }
     toString() {
         return `${this.address}:${this.port}`;
@@ -72,7 +73,7 @@ function infoHash(t) {
 }
 exports.infoHash = infoHash;
 function ensureDict(t) {
-    if (t instanceof Buffer ||
+    if (t instanceof Uint8Array ||
         typeof t === "number" ||
         Array.isArray(t) ||
         typeof t === "string") {
@@ -88,30 +89,20 @@ function ensureInteger(t) {
     return t;
 }
 exports.ensureInteger = ensureInteger;
-function ensureBuffer(t) {
-    if (!(t instanceof Buffer)) {
+function ensureU8A(t) {
+    if (!(t instanceof Uint8Array)) {
         throw new Error(`${t} is not buf`);
     }
     return t;
 }
-exports.ensureBuffer = ensureBuffer;
-function toBuffer(s) {
-    if (typeof s === "number")
-        return toBuffer(s.toString(10));
-    return Buffer.from(s, "ascii");
-}
-exports.toBuffer = toBuffer;
-function fromBuffer(b) {
-    return b.toString("ascii");
-}
-exports.fromBuffer = fromBuffer;
+exports.ensureU8A = ensureU8A;
 function readInteger(b) {
-    return parseInt(fromBuffer(b));
+    return parseInt((0, compat_1.toString)(b));
 }
 exports.readInteger = readInteger;
 function stringifyBuffers(t) {
-    if (t instanceof Buffer) {
-        t = fromBuffer(t);
+    if (t instanceof Uint8Array) {
+        t = (0, compat_1.toString)(t);
     }
     if (typeof t === "number" || typeof t === "string") {
         return t;

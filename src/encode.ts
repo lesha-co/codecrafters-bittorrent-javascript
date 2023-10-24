@@ -1,3 +1,4 @@
+import { concat, toUint8Array } from "./compat";
 import {
   COLON,
   DICT_MARKER,
@@ -5,43 +6,30 @@ import {
   INTEGER_MARKER,
   LIST_MARKER,
   Token,
-  toBuffer,
 } from "./model";
 
-export function encode(token: Token): Buffer {
+export function encode(token: Token): Uint8Array {
   if (typeof token === "number") {
-    return Buffer.concat([
-      Buffer.from([INTEGER_MARKER]),
-      toBuffer(token),
-      Buffer.from([END]),
-    ]);
+    return new Uint8Array([INTEGER_MARKER, ...toUint8Array(token), END]);
   }
 
   if (typeof token === "string") {
-    return encode(toBuffer(token));
+    return encode(toUint8Array(token));
   }
 
-  if (token instanceof Buffer) {
-    return Buffer.concat([toBuffer(token.length), Buffer.from([COLON]), token]);
+  if (token instanceof Uint8Array) {
+    return new Uint8Array([...toUint8Array(token.length), COLON, ...token]);
   }
 
   if (Array.isArray(token)) {
-    return Buffer.concat([
-      Buffer.from([LIST_MARKER]),
-      ...token.map(encode),
-      Buffer.from([END]),
-    ]);
+    const encodedTokens = token.map(encode);
+    return new Uint8Array([LIST_MARKER, ...concat(encodedTokens), END]);
   } else {
     const keys = Object.keys(token).sort();
     const kv = keys.flatMap((key) => [
-      encode(toBuffer(key)),
+      encode(toUint8Array(key)),
       encode(token[key]),
     ]);
-    const totalBuffer = Buffer.concat([
-      Buffer.from([DICT_MARKER]),
-      ...kv,
-      Buffer.from([END]),
-    ]);
-    return totalBuffer;
+    return new Uint8Array([DICT_MARKER, ...concat(kv), END]);
   }
 }

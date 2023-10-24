@@ -1,3 +1,4 @@
+import { toString } from "./compat";
 import {
   Token,
   COLON,
@@ -5,18 +6,17 @@ import {
   END,
   INTEGER_MARKER,
   LIST_MARKER,
-  ensureBuffer,
+  ensureU8A,
   ASCIIDigit,
   readInteger,
-  fromBuffer,
 } from "./model";
 
 type ConsumeResult<Result = Token> = {
   parsedValue: Result;
-  rest: Buffer;
+  rest: Uint8Array;
 };
 
-export function decode(bencodedValue: Buffer) {
+export function decode(bencodedValue: Uint8Array) {
   const { parsedValue, rest } = consumeOnce(bencodedValue);
   if (rest.length) {
     throw new Error("Extra characters after end of sequence");
@@ -24,7 +24,7 @@ export function decode(bencodedValue: Buffer) {
   return parsedValue;
 }
 
-function consumeOnce(bencodedValue: Buffer): ConsumeResult {
+function consumeOnce(bencodedValue: Uint8Array): ConsumeResult {
   // checking for numbers
   if (bencodedValue[0] === INTEGER_MARKER) {
     return consumeInteger(bencodedValue);
@@ -47,8 +47,8 @@ function consumeOnce(bencodedValue: Buffer): ConsumeResult {
   throw new Error("Datatype not yet supported");
 }
 
-function consumeSequence(bencodedValue: Buffer): ConsumeResult<Token[]> {
-  let unconsumed = bencodedValue.subarray(1);
+function consumeSequence(bencodedValue: Uint8Array): ConsumeResult<Token[]> {
+  let unconsumed = bencodedValue.slice(1);
   const list = [];
   while (unconsumed[0] !== END) {
     const { parsedValue, rest } = consumeOnce(unconsumed);
@@ -61,7 +61,7 @@ function consumeSequence(bencodedValue: Buffer): ConsumeResult<Token[]> {
   };
 }
 
-function consumeInteger(bencodedValue: Buffer): ConsumeResult {
+function consumeInteger(bencodedValue: Uint8Array): ConsumeResult {
   const end = bencodedValue.indexOf(END);
   if (end === -1) {
     throw new Error("wrong integer");
@@ -74,12 +74,12 @@ function consumeInteger(bencodedValue: Buffer): ConsumeResult {
   };
 }
 
-function consumeDict(bencodedValue: Buffer): ConsumeResult {
+function consumeDict(bencodedValue: Uint8Array): ConsumeResult {
   const { parsedValue, rest } = consumeSequence(bencodedValue);
 
   const dict: Record<string, any> = {};
   for (let i = 0; i < parsedValue.length; i += 2) {
-    const key = fromBuffer(ensureBuffer(parsedValue[i]));
+    const key = toString(ensureU8A(parsedValue[i]));
     dict[key] = parsedValue[i + 1];
   }
   return {
@@ -88,9 +88,9 @@ function consumeDict(bencodedValue: Buffer): ConsumeResult {
   };
 }
 
-function consumeString(bencodedValue: Buffer) {
+function consumeString(bencodedValue: Uint8Array) {
   const colonIndex = bencodedValue.indexOf(COLON);
-  const dataLength = readInteger(bencodedValue.subarray(0, colonIndex));
+  const dataLength = readInteger(bencodedValue.slice(0, colonIndex));
   const totalLengthToParse = colonIndex + dataLength + 1;
 
   const parsedValue = bencodedValue.subarray(

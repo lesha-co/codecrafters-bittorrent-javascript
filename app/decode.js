@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.decode = void 0;
+const compat_1 = require("./compat");
 const model_1 = require("./model");
 function decode(bencodedValue) {
     const { parsedValue, rest } = consumeOnce(bencodedValue);
@@ -30,7 +31,7 @@ function consumeOnce(bencodedValue) {
     throw new Error("Datatype not yet supported");
 }
 function consumeSequence(bencodedValue) {
-    let unconsumed = bencodedValue.subarray(1);
+    let unconsumed = bencodedValue.slice(1);
     const list = [];
     while (unconsumed[0] !== model_1.END) {
         const { parsedValue, rest } = consumeOnce(unconsumed);
@@ -57,7 +58,7 @@ function consumeDict(bencodedValue) {
     const { parsedValue, rest } = consumeSequence(bencodedValue);
     const dict = {};
     for (let i = 0; i < parsedValue.length; i += 2) {
-        const key = (0, model_1.fromBuffer)((0, model_1.ensureBuffer)(parsedValue[i]));
+        const key = (0, compat_1.toString)((0, model_1.ensureU8A)(parsedValue[i]));
         dict[key] = parsedValue[i + 1];
     }
     return {
@@ -67,7 +68,7 @@ function consumeDict(bencodedValue) {
 }
 function consumeString(bencodedValue) {
     const colonIndex = bencodedValue.indexOf(model_1.COLON);
-    const dataLength = (0, model_1.readInteger)(bencodedValue.subarray(0, colonIndex));
+    const dataLength = (0, model_1.readInteger)(bencodedValue.slice(0, colonIndex));
     const totalLengthToParse = colonIndex + dataLength + 1;
     const parsedValue = bencodedValue.subarray(colonIndex + 1, totalLengthToParse);
     return {

@@ -3,10 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPeers = void 0;
 const decode_1 = require("./decode");
 const model_1 = require("./model");
-const blobToBuffer = async (blob) => {
+const blobToU8A = async (blob) => {
     const arrayBuffer = await blob.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    return buffer;
+    return new Uint8Array(arrayBuffer);
 };
 async function getPeers(t) {
     const info_hash = (0, model_1.infoHash)(t);
@@ -30,16 +29,16 @@ async function getPeers(t) {
         throw new Error(response.statusText);
     }
     const responseBlob = await response.blob();
-    const responseBuffer = await blobToBuffer(responseBlob);
-    const _responseData = (0, decode_1.decode)(responseBuffer);
+    const responseU8A = await blobToU8A(responseBlob);
+    const _responseData = (0, decode_1.decode)(responseU8A);
     const responseData = (0, model_1.ensureDict)(_responseData);
     const _peers = responseData.peers;
-    const peersBuffer = (0, model_1.ensureBuffer)(_peers);
-    const nPeers = peersBuffer.length / 6;
+    const peersU8A = (0, model_1.ensureU8A)(_peers);
+    const nPeers = peersU8A.length / 6;
     const peers = [];
     for (let index = 0; index < nPeers; index++) {
-        const peer = peersBuffer.subarray(index * 6, (index + 1) * 6);
-        peers.push(model_1.AddressInfo.fromBuffer(peer));
+        const peer = peersU8A.subarray(index * 6, (index + 1) * 6);
+        peers.push(model_1.AddressInfo.fromU8A(peer));
     }
     return peers;
 }

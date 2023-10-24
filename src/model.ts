@@ -1,9 +1,10 @@
+import { toString, readUInt16BE } from "./compat";
 import { encode } from "./encode";
 import * as crypto from "node:crypto";
 
 export type Token =
   | string
-  | Buffer
+  | Uint8Array
   | number
   | Token[]
   | { [key: string]: Token };
@@ -30,7 +31,7 @@ export type TorrentFile = {
     length: number;
     name: string;
     "piece length": number;
-    pieces: Buffer;
+    pieces: Uint8Array;
   };
 };
 
@@ -44,18 +45,18 @@ export class AddressInfo {
     const [addr, port] = s.split(":");
     return new AddressInfo(addr, parseInt(port, 10));
   }
-  public static fromBuffer(b: Buffer): AddressInfo {
+  public static fromU8A(b: Uint8Array): AddressInfo {
     if (b.length !== 6) {
-      throw new Error("Buffer must be of length 6");
+      throw new Error("Uint8Array must be of length 6");
     }
-    return new AddressInfo(b.subarray(0, 4).join("."), b.readUInt16BE(4));
+    return new AddressInfo(b.subarray(0, 4).join("."), readUInt16BE(b, 4));
   }
   public toString() {
     return `${this.address}:${this.port}`;
   }
 }
 
-export function infoHash(t: TorrentFile): Buffer {
+export function infoHash(t: TorrentFile): Uint8Array {
   const bencodedInfo = encode(t.info);
   const shasum = crypto.createHash("sha1");
   shasum.update(bencodedInfo);
@@ -65,7 +66,7 @@ export function infoHash(t: TorrentFile): Buffer {
 
 export function ensureDict(t: Token): Record<string, Token> {
   if (
-    t instanceof Buffer ||
+    t instanceof Uint8Array ||
     typeof t === "number" ||
     Array.isArray(t) ||
     typeof t === "string"
@@ -80,28 +81,20 @@ export function ensureInteger(t: Token): number {
   }
   return t;
 }
-export function ensureBuffer(t: Token): Buffer {
-  if (!(t instanceof Buffer)) {
+export function ensureU8A(t: Token): Uint8Array {
+  if (!(t instanceof Uint8Array)) {
     throw new Error(`${t} is not buf`);
   }
   return t;
 }
 
-export function toBuffer(s: string | number) {
-  if (typeof s === "number") return toBuffer(s.toString(10));
-  return Buffer.from(s, "ascii");
-}
-export function fromBuffer(b: Buffer) {
-  return b.toString("ascii");
-}
-
-export function readInteger(b: Buffer) {
-  return parseInt(fromBuffer(b));
+export function readInteger(b: Uint8Array) {
+  return parseInt(toString(b));
 }
 
 export function stringifyBuffers(t: Token): Token {
-  if (t instanceof Buffer) {
-    t = fromBuffer(t);
+  if (t instanceof Uint8Array) {
+    t = toString(t);
   }
   if (typeof t === "number" || typeof t === "string") {
     return t;

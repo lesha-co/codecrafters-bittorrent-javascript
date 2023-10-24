@@ -1,9 +1,9 @@
 import { decode } from "./decode";
 import { getPeers } from "./getPeers";
 import { infoTorrent, parseTorrent } from "./info";
-import * as fs from "node:fs";
-import { AddressInfo, stringifyBuffers, toBuffer } from "./model";
+import { AddressInfo, stringifyBuffers } from "./model";
 import { getPeerInfo } from "./getPeerInfo";
+import { toUint8Array } from "./compat";
 
 export async function _main(
   command: string,
@@ -11,7 +11,7 @@ export async function _main(
   argument2?: string
 ): Promise<string> {
   if (command === "decode") {
-    return JSON.stringify(stringifyBuffers(decode(toBuffer(argument))));
+    return JSON.stringify(stringifyBuffers(decode(toUint8Array(argument))));
   }
   if (command === "info") {
     return infoTorrent(parseTorrent(argument));
@@ -26,11 +26,6 @@ export async function _main(
       AddressInfo.fromString(argument2)
     );
     return `Peer ID: ${peer.id}`;
-  }
-  if (command === "save" && argument2) {
-    const b = Buffer.from(argument, "hex");
-    fs.writeFileSync(argument2, b);
-    return "";
   }
   console.error(`Unknown command ${command}`);
   throw new Error(`Unknown command ${command}`);

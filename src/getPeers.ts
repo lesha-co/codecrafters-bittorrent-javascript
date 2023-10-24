@@ -2,15 +2,14 @@ import { decode } from "./decode";
 import {
   AddressInfo,
   TorrentFile,
-  ensureBuffer,
+  ensureU8A,
   ensureDict,
   infoHash,
 } from "./model";
 
-const blobToBuffer = async (blob: Blob): Promise<Buffer> => {
+const blobToU8A = async (blob: Blob): Promise<Uint8Array> => {
   const arrayBuffer = await blob.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  return buffer;
+  return new Uint8Array(arrayBuffer);
 };
 
 export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
@@ -35,17 +34,17 @@ export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
     throw new Error(response.statusText);
   }
   const responseBlob = await response.blob();
-  const responseBuffer = await blobToBuffer(responseBlob);
-  const _responseData = decode(responseBuffer);
+  const responseU8A = await blobToU8A(responseBlob);
+  const _responseData = decode(responseU8A);
   const responseData = ensureDict(_responseData);
   const _peers = responseData.peers;
-  const peersBuffer = ensureBuffer(_peers);
-  const nPeers = peersBuffer.length / 6;
+  const peersU8A = ensureU8A(_peers);
+  const nPeers = peersU8A.length / 6;
 
   const peers: AddressInfo[] = [];
   for (let index = 0; index < nPeers; index++) {
-    const peer = peersBuffer.subarray(index * 6, (index + 1) * 6);
-    peers.push(AddressInfo.fromBuffer(peer));
+    const peer = peersU8A.subarray(index * 6, (index + 1) * 6);
+    peers.push(AddressInfo.fromU8A(peer));
   }
   return peers;
 }
