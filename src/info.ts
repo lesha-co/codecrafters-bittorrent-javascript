@@ -5,38 +5,40 @@ import {
   ensureBuffer,
   ensureDict,
   ensureInteger,
-  ensureString,
+  fromBuffer,
   infoHash,
 } from "./model";
 
 export function parseTorrent(filename: string): TorrentFile {
   const data = readFileSync(filename);
-  const dict = decode(data, false);
-  const _dict = ensureDict(dict);
+  const decodedData = decode(data);
+  const _dict = ensureDict(decodedData);
   const _dict_info = ensureDict(_dict.info);
   return {
-    announce: ensureString(_dict.announce),
+    announce: fromBuffer(ensureBuffer(_dict.announce)),
     info: {
       "piece length": ensureInteger(_dict_info["piece length"]),
       length: ensureInteger(_dict_info.length),
-      name: ensureString(_dict_info.name),
+      name: fromBuffer(ensureBuffer(_dict_info.name)),
       pieces: ensureBuffer(_dict_info.pieces),
     },
   };
 }
 
-export function infoTorrent(torrent: TorrentFile) {
+export function infoTorrent(torrent: TorrentFile): string {
   const { announce, info } = torrent;
-
-  console.log(`Tracker URL: ${announce}`);
-  console.log(`Length: ${info.length}`);
+  const output: string[] = [];
+  output.push(`Tracker URL: ${announce}`);
+  output.push(`Length: ${info.length}`);
   const hex = infoHash(torrent).toString("hex");
-  console.log(`Info Hash: ${hex}`);
-  console.log(`Piece Length: ${info["piece length"]}`);
-  console.log("Piece Hashes:");
+  output.push(`Info Hash: ${hex}`);
+  output.push(`Piece Length: ${info["piece length"]}`);
+  output.push("Piece Hashes:");
   const pieces = info.pieces;
   const nPieces = pieces.length / 20;
   for (let piece = 0; piece < nPieces; piece++) {
-    console.log(pieces.subarray(piece * 20, (piece + 1) * 20).toString("hex"));
+    output.push(pieces.subarray(piece * 20, (piece + 1) * 20).toString("hex"));
   }
+
+  return output.join("\n");
 }

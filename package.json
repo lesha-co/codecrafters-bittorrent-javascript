@@ -4,7 +4,8 @@
   "description": "[![progress-banner](https://backend.codecrafters.io/progress/bittorrent/ecab3aec-db4c-4151-b316-fba11e41fe7b)](https://app.codecrafters.io/users/lesha-co?r=2qF)",
   "main": "index.js",
   "scripts": {
-    "test": "tsc -w"
+    "start": "tsc -w",
+    "test": "node app/test.js"
   },
   "keywords": [],
   "author": "",

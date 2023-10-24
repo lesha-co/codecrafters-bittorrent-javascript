@@ -1,5 +1,11 @@
 import { decode } from "./decode";
-import { TorrentFile, ensureBuffer, ensureDict, infoHash } from "./model";
+import {
+  AddressInfo,
+  TorrentFile,
+  ensureBuffer,
+  ensureDict,
+  infoHash,
+} from "./model";
 
 const blobToBuffer = async (blob: Blob): Promise<Buffer> => {
   const arrayBuffer = await blob.arrayBuffer();
@@ -7,7 +13,7 @@ const blobToBuffer = async (blob: Blob): Promise<Buffer> => {
   return buffer;
 };
 
-export async function getPeers(t: TorrentFile): Promise<string[]> {
+export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
   const info_hash = infoHash(t);
   let info_hash_urle = "";
   for (let index = 0; index < info_hash.length; index++) {
@@ -30,18 +36,16 @@ export async function getPeers(t: TorrentFile): Promise<string[]> {
   }
   const responseBlob = await response.blob();
   const responseBuffer = await blobToBuffer(responseBlob);
-  const _responseData = decode(responseBuffer, false);
+  const _responseData = decode(responseBuffer);
   const responseData = ensureDict(_responseData);
   const _peers = responseData.peers;
   const peersBuffer = ensureBuffer(_peers);
   const nPeers = peersBuffer.length / 6;
 
-  const peersStrings: string[] = [];
+  const peers: AddressInfo[] = [];
   for (let index = 0; index < nPeers; index++) {
     const peer = peersBuffer.subarray(index * 6, (index + 1) * 6);
-    peersStrings.push(
-      `${peer[0]}.${peer[1]}.${peer[2]}.${peer[3]}:${peer.readUInt16BE(4)}`
-    );
+    peers.push(AddressInfo.fromBuffer(peer));
   }
-  return peersStrings;
+  return peers;
 }

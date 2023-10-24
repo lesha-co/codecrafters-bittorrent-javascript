@@ -31,17 +31,17 @@ async function getPeers(t) {
     }
     const responseBlob = await response.blob();
     const responseBuffer = await blobToBuffer(responseBlob);
-    const _responseData = (0, decode_1.decode)(responseBuffer, false);
+    const _responseData = (0, decode_1.decode)(responseBuffer);
     const responseData = (0, model_1.ensureDict)(_responseData);
     const _peers = responseData.peers;
     const peersBuffer = (0, model_1.ensureBuffer)(_peers);
     const nPeers = peersBuffer.length / 6;
-    const peersStrings = [];
+    const peers = [];
     for (let index = 0; index < nPeers; index++) {
         const peer = peersBuffer.subarray(index * 6, (index + 1) * 6);
-        peersStrings.push(`${peer[0]}.${peer[1]}.${peer[2]}.${peer[3]}:${peer.readUInt16BE(4)}`);
+        peers.push(model_1.AddressInfo.fromBuffer(peer));
     }
-    return peersStrings;
+    return peers;
 }
 exports.getPeers = getPeers;
 //# sourceMappingURL=getPeers.js.map

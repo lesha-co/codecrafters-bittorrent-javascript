@@ -4,32 +4,29 @@ exports.encode = void 0;
 const model_1 = require("./model");
 function encode(token) {
     if (typeof token === "number") {
-        return Buffer.from(`i${token.toString(10)}e`, "ascii");
+        return Buffer.concat([
+            Buffer.from([model_1.INTEGER_MARKER]),
+            (0, model_1.toBuffer)(token),
+            Buffer.from([model_1.END]),
+        ]);
     }
-    else if (typeof token === "string") {
-        const buffer = Buffer.from(token);
-        return encode(buffer);
+    if (typeof token === "string") {
+        return encode((0, model_1.toBuffer)(token));
     }
-    else if (token instanceof Buffer) {
-        const length = token.length.toString(10);
-        const buf = Buffer.alloc(length.length + 1 + token.length);
-        buf.write(length, 0, "ascii");
-        buf.writeUint8(model_1.COLON, length.length);
-        token.copy(buf, length.length + 1);
-        return buf;
+    if (token instanceof Buffer) {
+        return Buffer.concat([(0, model_1.toBuffer)(token.length), Buffer.from([model_1.COLON]), token]);
     }
-    else if (Array.isArray(token)) {
-        const totalBuffer = Buffer.concat([
+    if (Array.isArray(token)) {
+        return Buffer.concat([
             Buffer.from([model_1.LIST_MARKER]),
             ...token.map(encode),
             Buffer.from([model_1.END]),
         ]);
-        return totalBuffer;
     }
     else {
         const keys = Object.keys(token).sort();
         const kv = keys.flatMap((key) => [
-            encode(Buffer.from(key, "ascii")),
+            encode((0, model_1.toBuffer)(key)),
             encode(token[key]),
         ]);
         const totalBuffer = Buffer.concat([

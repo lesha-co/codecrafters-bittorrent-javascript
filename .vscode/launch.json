@@ -9,10 +9,8 @@
       "request": "launch",
       "name": "Launch Program",
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/app/main.js",
+      "program": "${workspaceFolder}/app/test.js",
       "sourceMaps": true,
-      // "args": ["info", "sample2.torrent"],
-      "args": ["decode", "d3:foo9:blueberry5:helloi52ee"],
       "outFiles": ["${workspaceFolder}/**/*.js"]
     }
   ]
