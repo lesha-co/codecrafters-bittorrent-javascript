@@ -114,7 +114,7 @@ export class PeerAgent extends EventEmitter {
     }
     const { peerMessage, rest } = result;
     this.partialMessage = rest;
-    console.error();
+    // console.error();
     console.error(`<<< ` + peerMessageToString(peerMessage, "them"));
     // console.error(toHex(data, 1, 4));
     if (peerMessage.type === "bitfield") {
@@ -139,7 +139,7 @@ export class PeerAgent extends EventEmitter {
         return;
       }
       const encoded = encodePeerMessage(pm);
-      console.error();
+      // console.error();
       console.error(`>>> ` + peerMessageToString(pm, "us"));
       // console.error(toHex(encoded, 1, 4));
       this.connection.write(encoded, (err) => {
@@ -191,30 +191,26 @@ export class PeerAgent extends EventEmitter {
 
   public async downloadPiece(pieceIndex: number): Promise<Uint8Array> {
     const metrics = getMetrics(this.torrent, pieceIndex);
-    const pieceBuffer = Buffer.alloc(metrics.currentPieceLengthBytes);
-    const manager = new PartedDownloadManager(metrics.currentPieceBlockCount);
-    console.log("total piece length", metrics.currentPieceLengthBytes);
+    const pieceBuffer = Buffer.alloc(metrics.piece.current.bytes);
+    const manager = new PartedDownloadManager(metrics.piece.current.blocks);
     while (true) {
       const blockIndex = manager.getAnyItem();
 
       if (blockIndex === null) {
         break;
       }
-      const numberBlocksToDownload = metrics.currentPieceBlockCount;
+      const numberBlocksToDownload = metrics.piece.current.blocks;
 
-      const isLastBlock = blockIndex == numberBlocksToDownload - 1;
+      const isLastBlock =
+        metrics.piece.current.isLast &&
+        blockIndex == numberBlocksToDownload - 1;
       const request = await this.sendRequest(
         pieceIndex,
-        blockIndex * BLOCK_LENGTH,
-        isLastBlock ? metrics.lastBlockLength : BLOCK_LENGTH
+        blockIndex * metrics.block.regular.bytes,
+        isLastBlock ? metrics.block.last.bytes : metrics.block.regular.bytes
       );
       const pieceMessage = await this.waitForPiece(request);
       const buf = Buffer.from(pieceMessage.block);
-      console.error(
-        `copying bytes ${request.begin} - ${request.begin + buf.length} (${
-          buf.length
-        }) `
-      );
       const copiedBytes = buf.copy(pieceBuffer, request.begin);
       if (copiedBytes !== buf.length) {
         throw new Error(`copied ${copiedBytes} instead of ${buf.length}`);

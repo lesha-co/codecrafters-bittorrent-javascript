@@ -122,7 +122,7 @@ exports.stringifyBuffers = stringifyBuffers;
 exports.BLOCK_LENGTH = 2 ** 14;
 function getMetrics(torrent, pieceIndex) {
     const totalFileLength = torrent.info.length;
-    // file is divided into PIECES, each this long
+    // file is divided into PIECES, each this bytes long
     const pieceLength = torrent.info["piece length"];
     // we need download this many pieces, last one will be smaller
     const pieceCount = Math.ceil(totalFileLength / pieceLength);
@@ -137,17 +137,29 @@ function getMetrics(torrent, pieceIndex) {
     // also last block is smaller
     const lastBlockLength = lastPieceLenthBytes % exports.BLOCK_LENGTH;
     return {
-        totalFileLength,
-        pieceLength,
-        pieceCount,
-        lastPieceLenthBytes,
-        regularPieceBlockCount,
-        lastPieceBlockCount,
-        lastBlockLength,
-        currentPieceBlockCount: isLastPiece
-            ? lastPieceBlockCount
-            : regularPieceBlockCount,
-        currentPieceLengthBytes: isLastPiece ? lastPieceLenthBytes : pieceLength,
+        file: {
+            bytes: totalFileLength,
+            pieces: pieceCount,
+        },
+        piece: {
+            current: {
+                isLast: isLastPiece,
+                blocks: isLastPiece ? lastPieceBlockCount : regularPieceBlockCount,
+                bytes: isLastPiece ? lastPieceLenthBytes : pieceLength,
+            },
+            regular: {
+                blocks: regularPieceBlockCount,
+                bytes: pieceLength,
+            },
+            last: {
+                blocks: lastPieceBlockCount,
+                bytes: lastPieceLenthBytes,
+            },
+        },
+        block: {
+            regular: { bytes: exports.BLOCK_LENGTH },
+            last: { bytes: lastBlockLength },
+        },
     };
 }
 exports.getMetrics = getMetrics;
