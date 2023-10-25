@@ -116,7 +116,7 @@ export class PeerAgent extends EventEmitter {
     this.partialMessage = rest;
     console.error();
     console.error(`<<< ` + peerMessageToString(peerMessage, "them"));
-    console.error(toHex(data, 1, 4));
+    // console.error(toHex(data, 1, 4));
     if (peerMessage.type === "bitfield") {
       this.emit("bitfield", peerMessage.payload);
       this.theirBitField = peerMessage.payload;
@@ -173,7 +173,7 @@ export class PeerAgent extends EventEmitter {
     index: number;
     begin: number;
     length: number;
-  }): Promise<Uint8Array> {
+  }): Promise<PeerMessagePiece> {
     return new Promise((res) => {
       const onPiece = (pm: PeerMessagePiece) => {
         if (
@@ -182,7 +182,7 @@ export class PeerAgent extends EventEmitter {
           pm.block.length === requestMsg.length
         ) {
           this.removeListener("piece", onPiece);
-          res(pm.block);
+          res(pm);
         }
       };
       this.on("piece", onPiece);
@@ -193,7 +193,7 @@ export class PeerAgent extends EventEmitter {
     const metrics = getMetrics(this.torrent, pieceIndex);
     const pieceBuffer = Buffer.alloc(metrics.currentPieceLengthBytes);
     const manager = new PartedDownloadManager(metrics.currentPieceBlockCount);
-
+    console.log("total piece length", metrics.currentPieceLengthBytes);
     while (true) {
       const blockIndex = manager.getAnyItem();
 
@@ -208,9 +208,13 @@ export class PeerAgent extends EventEmitter {
         blockIndex * BLOCK_LENGTH,
         isLastBlock ? metrics.lastBlockLength : BLOCK_LENGTH
       );
-      const block = await this.waitForPiece(request);
-      console.log("Obtained block length", block.length);
-      const buf = Buffer.from(block);
+      const pieceMessage = await this.waitForPiece(request);
+      const buf = Buffer.from(pieceMessage.block);
+      console.error(
+        `copying bytes ${request.begin} - ${request.begin + buf.length} (${
+          buf.length
+        }) `
+      );
       const copiedBytes = buf.copy(pieceBuffer, request.begin);
       if (copiedBytes !== buf.length) {
         throw new Error(`copied ${copiedBytes} instead of ${buf.length}`);
