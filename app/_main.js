@@ -5,7 +5,7 @@ const decode_1 = require("./decode");
 const getPeers_1 = require("./getPeers");
 const info_1 = require("./info");
 const model_1 = require("./model");
-const getPeerInfo_1 = require("./getPeerInfo");
+const PeerAgent_1 = require("./PeerAgent");
 const compat_1 = require("./compat");
 const downloadPiece_1 = require("./downloadPiece");
 async function _main(command, argv) {
@@ -20,7 +20,7 @@ async function _main(command, argv) {
         return peers.join("\n");
     }
     if (command === "handshake" && argv[1]) {
-        const peer = new getPeerInfo_1.PeerAgent(await (0, info_1.parseTorrent)(argv[0]), model_1.AddressInfo.fromString(argv[1]));
+        const peer = new PeerAgent_1.PeerAgent(await (0, info_1.parseTorrent)(argv[0]), model_1.AddressInfo.fromString(argv[1]));
         const peerIDHex = await peer.getOtherPeerID();
         return `Peer ID: ${peerIDHex}`;
     }

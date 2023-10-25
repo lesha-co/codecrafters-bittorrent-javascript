@@ -8,6 +8,7 @@ const blobToU8A = async (blob) => {
     return new Uint8Array(arrayBuffer);
 };
 async function getPeers(t) {
+    console.error(`contacting tracker...`);
     const info_hash = (0, model_1.infoHash)(t);
     let info_hash_urle = "";
     for (let index = 0; index < info_hash.length; index++) {
@@ -42,6 +43,7 @@ async function getPeers(t) {
         const peer = peersU8A.subarray(index * 6, (index + 1) * 6);
         peers.push(model_1.AddressInfo.fromU8A(peer));
     }
+    console.error(`got ${peers.length} peer(s): ${peers.join("; ")}`);
     return peers;
 }
 exports.getPeers = getPeers;

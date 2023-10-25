@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stringifyBuffers = exports.readInteger = exports.ensureU8A = exports.ensureInteger = exports.ensureDict = exports.infoHash = exports.AddressInfo = exports.ASCIIDigit = exports.END = exports.DICT_MARKER = exports.LIST_MARKER = exports.INTEGER_MARKER = exports.COLON = void 0;
+exports.getMetrics = exports.BLOCK_LENGTH = exports.stringifyBuffers = exports.readInteger = exports.ensureU8A = exports.ensureInteger = exports.ensureDict = exports.infoHash = exports.AddressInfo = exports.ASCIIDigit = exports.END = exports.DICT_MARKER = exports.LIST_MARKER = exports.INTEGER_MARKER = exports.COLON = void 0;
 const compat_1 = require("./compat");
 const encode_1 = require("./encode");
 const crypto = __importStar(require("node:crypto"));
@@ -119,4 +119,36 @@ function stringifyBuffers(t) {
     return newObject;
 }
 exports.stringifyBuffers = stringifyBuffers;
+exports.BLOCK_LENGTH = 2 ** 14;
+function getMetrics(torrent, pieceIndex) {
+    const totalFileLength = torrent.info.length;
+    // file is divided into PIECES, each this long
+    const pieceLength = torrent.info["piece length"];
+    // we need download this many pieces, last one will be smaller
+    const pieceCount = Math.ceil(totalFileLength / pieceLength);
+    // this is how long the last piece is
+    const lastPieceLenthBytes = totalFileLength % pieceLength;
+    // is this piece the last?
+    const isLastPiece = pieceIndex === pieceCount - 1;
+    // then, each piece is divided in blocks, this many:
+    const regularPieceBlockCount = pieceLength / exports.BLOCK_LENGTH;
+    // since last piece is smaller, it has different number of blocks
+    const lastPieceBlockCount = Math.ceil(lastPieceLenthBytes / exports.BLOCK_LENGTH);
+    // also last block is smaller
+    const lastBlockLength = lastPieceLenthBytes % exports.BLOCK_LENGTH;
+    return {
+        totalFileLength,
+        pieceLength,
+        pieceCount,
+        lastPieceLenthBytes,
+        regularPieceBlockCount,
+        lastPieceBlockCount,
+        lastBlockLength,
+        currentPieceBlockCount: isLastPiece
+            ? lastPieceBlockCount
+            : regularPieceBlockCount,
+        currentPieceLengthBytes: isLastPiece ? lastPieceLenthBytes : pieceLength,
+    };
+}
+exports.getMetrics = getMetrics;
 //# sourceMappingURL=model.js.map

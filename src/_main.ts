@@ -2,7 +2,7 @@ import { decode } from "./decode";
 import { getPeers } from "./getPeers";
 import { infoTorrent, parseTorrent } from "./info";
 import { AddressInfo, stringifyBuffers } from "./model";
-import { PeerAgent } from "./getPeerInfo";
+import { PeerAgent } from "./PeerAgent";
 import { toUint8Array } from "./compat";
 import { downloadPiece } from "./downloadPiece";
 

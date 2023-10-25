@@ -106,3 +106,38 @@ export function stringifyBuffers(t: Token): Token {
   }
   return newObject;
 }
+
+export const BLOCK_LENGTH = 2 ** 14;
+
+export function getMetrics(torrent: TorrentFile, pieceIndex: number) {
+  const totalFileLength = torrent.info.length;
+  // file is divided into PIECES, each this long
+  const pieceLength = torrent.info["piece length"];
+
+  // we need download this many pieces, last one will be smaller
+  const pieceCount = Math.ceil(totalFileLength / pieceLength);
+  // this is how long the last piece is
+  const lastPieceLenthBytes = totalFileLength % pieceLength;
+
+  // is this piece the last?
+  const isLastPiece = pieceIndex === pieceCount - 1;
+  // then, each piece is divided in blocks, this many:
+  const regularPieceBlockCount = pieceLength / BLOCK_LENGTH;
+  // since last piece is smaller, it has different number of blocks
+  const lastPieceBlockCount = Math.ceil(lastPieceLenthBytes / BLOCK_LENGTH);
+  // also last block is smaller
+  const lastBlockLength = lastPieceLenthBytes % BLOCK_LENGTH;
+  return {
+    totalFileLength,
+    pieceLength,
+    pieceCount,
+    lastPieceLenthBytes,
+    regularPieceBlockCount,
+    lastPieceBlockCount,
+    lastBlockLength,
+    currentPieceBlockCount: isLastPiece
+      ? lastPieceBlockCount
+      : regularPieceBlockCount,
+    currentPieceLengthBytes: isLastPiece ? lastPieceLenthBytes : pieceLength,
+  };
+}

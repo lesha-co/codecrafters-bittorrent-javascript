@@ -13,6 +13,7 @@ const blobToU8A = async (blob: Blob): Promise<Uint8Array> => {
 };
 
 export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
+  console.error(`contacting tracker...`);
   const info_hash = infoHash(t);
   let info_hash_urle = "";
   for (let index = 0; index < info_hash.length; index++) {
@@ -47,5 +48,6 @@ export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
     const peer = peersU8A.subarray(index * 6, (index + 1) * 6);
     peers.push(AddressInfo.fromU8A(peer));
   }
+  console.error(`got ${peers.length} peer(s): ${peers.join("; ")}`);
   return peers;
 }
