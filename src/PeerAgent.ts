@@ -117,7 +117,6 @@ export class PeerAgent extends EventEmitter {
     console.error();
     console.error(`<<< ` + peerMessageToString(peerMessage, "them"));
     console.error(toHex(data, 1, 4));
-
     if (peerMessage.type === "bitfield") {
       this.emit("bitfield", peerMessage.payload);
       this.theirBitField = peerMessage.payload;
