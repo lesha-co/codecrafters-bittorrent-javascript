@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parsePeerMessage = void 0;
+exports.encodePeerMessage = exports.decodePeerMessage = void 0;
 const compat_1 = require("./compat");
 // const TYPE_CHOKE= 0;
 const TYPE_UNCHOKE = 1;
@@ -10,7 +10,7 @@ const TYPE_INTERESTED = 2;
 const TYPE_BITFIELD = 5;
 const TYPE_REQUEST = 7;
 const TYPE_PIECE = 7;
-function parsePeerMessage(msg) {
+function decodePeerMessage(msg) {
     const length = (0, compat_1.readUInt32BE)(msg, 0);
     if (msg.length != length + 4) {
         throw new Error("wrong length");
@@ -44,5 +44,26 @@ function parsePeerMessage(msg) {
         }
     }
 }
-exports.parsePeerMessage = parsePeerMessage;
+exports.decodePeerMessage = decodePeerMessage;
+function encodePeerMessage(msg) {
+    const pad = (u8a) => (0, compat_1.concat)((0, compat_1.writeUInt32BE)(u8a.length), u8a);
+    switch (msg.type) {
+        case "unchoke":
+            return pad(new Uint8Array([TYPE_UNCHOKE]));
+        case "interested":
+            return pad(new Uint8Array([TYPE_INTERESTED]));
+        case "bitfield":
+            throw new Error("not implemented");
+        case "request":
+            return pad(new Uint8Array([
+                TYPE_REQUEST,
+                ...(0, compat_1.writeUInt32BE)(msg.index),
+                ...(0, compat_1.writeUInt32BE)(msg.begin),
+                ...(0, compat_1.writeUInt32BE)(msg.length),
+            ]));
+        case "piece":
+            return pad(new Uint8Array([TYPE_PIECE]));
+    }
+}
+exports.encodePeerMessage = encodePeerMessage;
 //# sourceMappingURL=peerMessage.js.map

@@ -2,20 +2,41 @@ import net from "node:net";
 import { AddressInfo, TorrentFile, infoHash } from "./model";
 import { toHex, toUint8Array } from "./compat";
 import EventEmitter from "node:events";
-import { PeerMessage, parsePeerMessage } from "./peerMessage";
+import {
+  PeerMessage,
+  decodePeerMessage,
+  encodePeerMessage,
+} from "./peerMessage";
 
 export class PeerAgent extends EventEmitter {
   private connection: net.Socket;
-  private peerID = new Uint8Array(20).map((x) =>
+  /**
+   * Our peer id
+   */
+  private ourPeerID = new Uint8Array(20).map((x) =>
     Math.round(Math.random() * 256)
   );
-  private messages: PeerMessage[] = [];
-  private handshakeReceived = false;
-  private otherPeerID: Uint8Array | undefined = undefined;
+  /**
+   * has value if other peer responded to handshake
+   */
+  private theirPeerID: Uint8Array | undefined = undefined;
 
+  /**
+   * An array to store messages for debugging
+   */
+  private messages: PeerMessage[] = [];
+  /**
+   * has value if peer sent their bitfield
+   */
+  private theirBitField: Uint8Array | undefined;
+
+  /**
+   * Waits for handshake or returns peer id if already got one
+   * @returns their peer id
+   */
   public async getOtherPeerID(): Promise<string> {
     return new Promise((res) => {
-      let otherPeer = this.otherPeerID;
+      let otherPeer = this.theirPeerID;
       if (otherPeer !== undefined) {
         res(toHex(otherPeer));
       }
@@ -24,19 +45,54 @@ export class PeerAgent extends EventEmitter {
       });
     });
   }
+  public async getBitfield(): Promise<Uint8Array> {
+    return new Promise((res) => {
+      if (this.theirBitField) {
+        return this.theirBitField;
+      }
+
+      this.once("bitfield", (data: Uint8Array) => {
+        res(data);
+      });
+    });
+  }
   private onData(data: Uint8Array) {
-    if (!this.handshakeReceived) {
-      this.handshakeReceived = true;
-      this.otherPeerID = data.subarray(48, 68);
-      this.emit("handshake", this.otherPeerID);
+    if (this.theirPeerID === undefined) {
+      this.theirPeerID = data.subarray(48, 68);
+      this.emit("handshake", this.theirPeerID);
       return;
     }
-    const pm = parsePeerMessage(data);
-    console.error("from peer: " + JSON.stringify(pm));
+
+    const pm = decodePeerMessage(data);
+    if (pm.type === "bitfield") {
+      this.theirBitField = pm.payload;
+      this.emit("bitfield", this.theirBitField);
+      return;
+    }
+    console.error("Received (hex) " + toHex(data));
+    console.error("        (text) " + JSON.stringify(pm));
     this.messages.push(pm);
   }
   public close() {
     this.connection.end();
+  }
+  public async send(pm: PeerMessage): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.connection.closed) {
+        reject("cant send message to closed socket");
+        return;
+      }
+      const encoded = encodePeerMessage(pm);
+      console.error(`Sending (text): ` + JSON.stringify(pm));
+      console.error(`         (hex): ` + toHex(encoded));
+      this.connection.write(encoded, (err) => {
+        if (err) {
+          reject();
+        } else {
+          resolve();
+        }
+      });
+    });
   }
   constructor(torrent: TorrentFile, peerAddress: AddressInfo) {
     super();
@@ -49,7 +105,7 @@ export class PeerAgent extends EventEmitter {
         this.connection.write(toUint8Array("BitTorrent protocol"));
         this.connection.write(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
         this.connection.write(infoHash(torrent));
-        this.connection.write(this.peerID);
+        this.connection.write(this.ourPeerID);
       }
     );
     this.connection.on("data", (data) => {

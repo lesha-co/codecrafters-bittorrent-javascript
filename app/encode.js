@@ -15,7 +15,7 @@ function encode(token) {
     }
     if (Array.isArray(token)) {
         const encodedTokens = token.map(encode);
-        return new Uint8Array([model_1.LIST_MARKER, ...(0, compat_1.concat)(encodedTokens), model_1.END]);
+        return new Uint8Array([model_1.LIST_MARKER, ...(0, compat_1.concat)(...encodedTokens), model_1.END]);
     }
     else {
         const keys = Object.keys(token).sort();
@@ -23,7 +23,7 @@ function encode(token) {
             encode((0, compat_1.toUint8Array)(key)),
             encode(token[key]),
         ]);
-        return new Uint8Array([model_1.DICT_MARKER, ...(0, compat_1.concat)(kv), model_1.END]);
+        return new Uint8Array([model_1.DICT_MARKER, ...(0, compat_1.concat)(...kv), model_1.END]);
     }
 }
 exports.encode = encode;

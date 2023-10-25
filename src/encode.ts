@@ -23,13 +23,13 @@ export function encode(token: Token): Uint8Array {
 
   if (Array.isArray(token)) {
     const encodedTokens = token.map(encode);
-    return new Uint8Array([LIST_MARKER, ...concat(encodedTokens), END]);
+    return new Uint8Array([LIST_MARKER, ...concat(...encodedTokens), END]);
   } else {
     const keys = Object.keys(token).sort();
     const kv = keys.flatMap((key) => [
       encode(toUint8Array(key)),
       encode(token[key]),
     ]);
-    return new Uint8Array([DICT_MARKER, ...concat(kv), END]);
+    return new Uint8Array([DICT_MARKER, ...concat(...kv), END]);
   }
 }

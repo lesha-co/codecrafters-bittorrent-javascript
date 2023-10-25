@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.concat = exports.toHex = exports.readUInt32BE = exports.readUInt16BE = exports.toString = exports.toUint8Array = void 0;
+exports.concat = exports.toHex = exports.writeUInt32BE = exports.readUInt32BE = exports.readUInt16BE = exports.toString = exports.toUint8Array = void 0;
 function toUint8Array(s) {
     if (typeof s === "number")
         return toUint8Array(s.toString(10));
@@ -23,6 +23,15 @@ function readUInt32BE(arr, offset) {
         arr[offset + 3]);
 }
 exports.readUInt32BE = readUInt32BE;
+function writeUInt32BE(n) {
+    return new Uint8Array([
+        (n >> 24) % 0xff,
+        (n >> 16) % 0xff,
+        (n >> 8) % 0xff,
+        n % 0xff,
+    ]);
+}
+exports.writeUInt32BE = writeUInt32BE;
 function toHex(arr) {
     const hexes = Array.from(arr).map((x) => {
         let hex = x.toString(16);
@@ -34,7 +43,7 @@ function toHex(arr) {
     return hexes.join("");
 }
 exports.toHex = toHex;
-function concat(arrs) {
+function concat(...arrs) {
     let totalLength = 0;
     for (const arr of arrs) {
         totalLength += arr.length;

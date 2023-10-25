@@ -19,6 +19,14 @@ export function readUInt32BE(arr: Uint8Array, offset: number): number {
   );
 }
 
+export function writeUInt32BE(n: number): Uint8Array {
+  return new Uint8Array([
+    (n >> 24) % 0xff,
+    (n >> 16) % 0xff,
+    (n >> 8) % 0xff,
+    n % 0xff,
+  ]);
+}
 export function toHex(arr: Uint8Array): string {
   const hexes = Array.from(arr).map((x) => {
     let hex = x.toString(16);
@@ -30,7 +38,7 @@ export function toHex(arr: Uint8Array): string {
   return hexes.join("");
 }
 
-export function concat(arrs: Uint8Array[]): Uint8Array {
+export function concat(...arrs: Uint8Array[]): Uint8Array {
   let totalLength = 0;
   for (const arr of arrs) {
     totalLength += arr.length;
