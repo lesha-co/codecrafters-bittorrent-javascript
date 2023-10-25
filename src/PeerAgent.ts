@@ -116,8 +116,7 @@ export class PeerAgent extends EventEmitter {
     this.partialMessage = rest;
     console.error();
     console.error(`<<< ` + peerMessageToString(peerMessage, "them"));
-    console.error(`    first 64 bytes of ${data.length}):`);
-    console.error(toHex(data.slice(0, 64), 1, 4));
+    console.error(toHex(data, 1, 4));
 
     if (peerMessage.type === "bitfield") {
       this.emit("bitfield", peerMessage.payload);

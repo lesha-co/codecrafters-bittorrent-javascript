@@ -98,8 +98,7 @@ class PeerAgent extends node_events_1.default {
         this.partialMessage = rest;
         console.error();
         console.error(`<<< ` + (0, peerMessage_1.peerMessageToString)(peerMessage, "them"));
-        console.error(`    first 64 bytes of ${data.length}):`);
-        console.error((0, compat_1.toHex)(data.slice(0, 64), 1, 4));
+        console.error((0, compat_1.toHex)(data, 1, 4));
         if (peerMessage.type === "bitfield") {
             this.emit("bitfield", peerMessage.payload);
             this.theirBitField = peerMessage.payload;
