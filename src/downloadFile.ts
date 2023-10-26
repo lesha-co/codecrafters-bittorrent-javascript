@@ -2,36 +2,72 @@ import fs from "node:fs/promises";
 import { PeerAgent } from "./PeerAgent";
 import { getPeers } from "./getPeers";
 import { TorrentFile } from "./TorrentFile";
-import { AddressInfo } from "./model";
 import { PartedDownloadManager } from "./PartedDownloadManager";
 
+class ResettableTimeout {
+  private timeoutID: NodeJS.Timeout | null;
+
+  public reset() {
+    this.cancel();
+    this.start();
+  }
+  public cancel() {
+    if (this.timeoutID !== null) clearTimeout(this.timeoutID);
+  }
+  public start() {
+    this.timeoutID = setTimeout(this.callback, this.timeout);
+  }
+  constructor(private timeout: number, private callback: () => void) {
+    this.timeoutID = null;
+    this.start();
+  }
+}
+
 async function worker(
-  peer: AddressInfo,
+  peerAgent: PeerAgent,
   torrent: TorrentFile,
   manager: PartedDownloadManager,
-  handle: fs.FileHandle
+  handle: fs.FileHandle,
+  name: string
 ) {
-  const peerAgent = new PeerAgent(torrent, peer);
-  await peerAgent.getBitfield();
-  await peerAgent.sendInterested();
-  await peerAgent.waitForUnchoke();
-  while (true) {
-    const pieceIndex = manager.getAnyItem();
+  async function workerAttempt(): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      let watchdog = new ResettableTimeout(10000, reject);
 
-    if (pieceIndex === null) break;
-    console.error(
-      `[start] piece ${pieceIndex} peer ${peerAgent.remoteAddress}`
-    );
-    const piece = await peerAgent.downloadPiece(pieceIndex);
-    await handle.write(
-      piece,
-      0,
-      piece.length,
-      torrent.metrics.piece(pieceIndex).offset
-    );
-    console.error(`[finish] piece ${pieceIndex} `);
+      await peerAgent.connect();
+      watchdog.reset();
+
+      await peerAgent.getBitfield();
+      watchdog.reset();
+
+      await peerAgent.sendInterested();
+      watchdog.reset();
+
+      await peerAgent.waitForUnchoke();
+      watchdog.reset();
+
+      while (manager.hasItem()) {
+        const pieceIndex = manager.getAnyItem();
+        const piece = await peerAgent.downloadPiece(pieceIndex);
+        await handle.write(
+          piece,
+          0,
+          piece.length,
+          torrent.metrics.piece(pieceIndex).offset
+        );
+        watchdog.reset();
+      }
+      await peerAgent.close();
+      watchdog.cancel();
+      resolve();
+    });
   }
-  peerAgent.close();
+
+  while (manager.hasItem()) {
+    try {
+      await workerAttempt();
+    } catch {}
+  }
 }
 
 export async function downloadFile(
@@ -44,7 +80,10 @@ export async function downloadFile(
 
   const manager = new PartedDownloadManager(torrent.metrics.file.pieces);
 
-  const workers = peers.map((peer) => worker(peer, torrent, manager, file));
+  const workers = peers.map((peer, index) => {
+    const agent = new PeerAgent(torrent, peer);
+    return worker(agent, torrent, manager, file, `worker-${index}`);
+  });
 
   await Promise.allSettled(workers);
   console.error("all settled");

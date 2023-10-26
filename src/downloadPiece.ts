@@ -12,9 +12,10 @@ export async function downloadPiece(
   const peers = await getPeers(torrent);
   const peer = peers[0];
   const peerAgent = new PeerAgent(torrent, peer);
+  await peerAgent.connect();
   const piece = await _downloadPiece(peerAgent, parseInt(index));
   await fs.writeFile(outfile, piece);
-  peerAgent.close();
+  await peerAgent.close();
   return `Piece ${index} downloaded to ${outfile}`;
 }
 

@@ -6,9 +6,12 @@ class PartedDownloadManager {
     constructor(nItems) {
         this.items = new Array(nItems).fill(false).map((x, i) => i);
     }
+    hasItem() {
+        return this.items.length > 0;
+    }
     getAnyItem() {
         if (this.items.length === 0) {
-            return null;
+            throw new Error("No items left");
         }
         const index = Math.round(this.items.length * Math.random()) % this.items.length;
         const item = this.items[index];

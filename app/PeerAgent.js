@@ -13,6 +13,9 @@ class PeerAgent extends node_events_1.default {
     torrent;
     peerAddress;
     connection;
+    get isConnected() {
+        return this.connection && !this.connection.closed;
+    }
     /**
      * Our peer id
      */
@@ -104,11 +107,13 @@ class PeerAgent extends node_events_1.default {
         }
     }
     close() {
-        this.connection.end();
+        return new Promise((res) => {
+            this.connection?.end(res);
+        });
     }
     async send(pm) {
         return new Promise((resolve, reject) => {
-            if (this.connection.closed) {
+            if (!this.isConnected) {
                 reject("cant send message to closed socket");
                 return;
             }
@@ -116,7 +121,7 @@ class PeerAgent extends node_events_1.default {
             // console.error();
             // console.error(`>>> ${this.theirPeerID} ` + peerMessageToString(pm, "us"));
             // console.error(toHex(encoded, 1, 4));
-            this.connection.write(encoded, (err) => {
+            this.connection?.write(encoded, (err) => {
                 if (err) {
                     reject();
                 }
@@ -157,11 +162,8 @@ class PeerAgent extends node_events_1.default {
         const pieceMetrics = metrics.piece(pieceIndex);
         const pieceBuffer = Buffer.alloc(pieceMetrics.bytes);
         const manager = new PartedDownloadManager_1.PartedDownloadManager(pieceMetrics.blocks);
-        while (true) {
+        while (manager.hasItem()) {
             const blockIndex = manager.getAnyItem();
-            if (blockIndex === null) {
-                break;
-            }
             const numberBlocksToDownload = pieceMetrics.blocks;
             const isLastBlock = pieceMetrics.isLast && blockIndex == numberBlocksToDownload - 1;
             const request = await this.sendRequest(pieceIndex, blockIndex * metrics.block.regular.bytes, isLastBlock ? metrics.block.last.bytes : metrics.block.regular.bytes);
@@ -174,28 +176,37 @@ class PeerAgent extends node_events_1.default {
         }
         return pieceBuffer;
     }
+    connect() {
+        return new Promise((resolve) => {
+            const connection = node_net_1.default.createConnection(this.peerAddress.port, this.peerAddress.address, () => {
+                console.error(`${this.peerAddress} contacting peer`);
+            });
+            connection.on("data", (data) => {
+                this.onData(data);
+            });
+            connection.on("end", () => {
+                console.error(`${this.peerAddress} Disconnected`);
+            });
+            connection.on("error", (err) => {
+                console.error(`${this.peerAddress} Connection error: ${err}`);
+            });
+            connection.on("connect", () => {
+                console.error(`${this.peerAddress} connected, sending handshake`);
+                connection.write(Uint8Array.from([19]));
+                connection.write((0, compat_1.toUint8Array)("BitTorrent protocol"));
+                connection.write(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
+                connection.write(this.torrent.infoHash());
+                connection.write(this.ourPeerID);
+                this.connection = connection;
+                resolve();
+            });
+        });
+    }
     constructor(torrent, peerAddress) {
         super();
         this.torrent = torrent;
         this.peerAddress = peerAddress;
-        this.connection = node_net_1.default.createConnection(peerAddress.port, peerAddress.address, () => {
-            console.error(`${peerAddress} contacting peer`);
-            // Send data to the server after the connection is established
-            this.connection.write(Uint8Array.from([19]));
-            this.connection.write((0, compat_1.toUint8Array)("BitTorrent protocol"));
-            this.connection.write(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
-            this.connection.write(torrent.infoHash());
-            this.connection.write(this.ourPeerID);
-        });
-        this.connection.on("data", (data) => {
-            this.onData(data);
-        });
-        this.connection.on("end", () => {
-            console.error(`${peerAddress} Disconnected`);
-        });
-        this.connection.on("error", (err) => {
-            console.error(`${peerAddress} Connection error: ${err}`);
-        });
+        this.connection = null;
     }
 }
 exports.PeerAgent = PeerAgent;

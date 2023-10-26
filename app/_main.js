@@ -23,6 +23,7 @@ async function _main(command, argv) {
     }
     if (command === "handshake" && argv[1]) {
         const peer = new PeerAgent_1.PeerAgent(await TorrentFile_1.TorrentFile.fromFilename(argv[0]), model_1.AddressInfo.fromString(argv[1]));
+        await peer.connect();
         return `Peer ID: ${await peer.getOtherPeerID()}`;
     }
     if (command === "download_piece") {

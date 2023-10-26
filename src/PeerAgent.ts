@@ -15,7 +15,10 @@ import { TorrentFile } from "./TorrentFile";
 import { PartedDownloadManager } from "./PartedDownloadManager";
 
 export class PeerAgent extends EventEmitter {
-  private connection: net.Socket;
+  private connection: net.Socket | null;
+  public get isConnected() {
+    return this.connection && !this.connection.closed;
+  }
   /**
    * Our peer id
    */
@@ -111,12 +114,14 @@ export class PeerAgent extends EventEmitter {
       this.emit("message", peerMessage);
     }
   }
-  public close() {
-    this.connection.end();
+  public close(): Promise<void> {
+    return new Promise((res) => {
+      this.connection?.end(res);
+    });
   }
   public async send(pm: PeerMessage): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.connection.closed) {
+      if (!this.isConnected) {
         reject("cant send message to closed socket");
         return;
       }
@@ -124,7 +129,7 @@ export class PeerAgent extends EventEmitter {
       // console.error();
       // console.error(`>>> ${this.theirPeerID} ` + peerMessageToString(pm, "us"));
       // console.error(toHex(encoded, 1, 4));
-      this.connection.write(encoded, (err) => {
+      this.connection?.write(encoded, (err) => {
         if (err) {
           reject();
         } else {
@@ -176,12 +181,9 @@ export class PeerAgent extends EventEmitter {
     const pieceMetrics = metrics.piece(pieceIndex);
     const pieceBuffer = Buffer.alloc(pieceMetrics.bytes);
     const manager = new PartedDownloadManager(pieceMetrics.blocks);
-    while (true) {
+    while (manager.hasItem()) {
       const blockIndex = manager.getAnyItem();
 
-      if (blockIndex === null) {
-        break;
-      }
       const numberBlocksToDownload = pieceMetrics.blocks;
 
       const isLastBlock =
@@ -200,31 +202,41 @@ export class PeerAgent extends EventEmitter {
     }
     return pieceBuffer;
   }
+
+  public connect(): Promise<void> {
+    return new Promise((resolve) => {
+      const connection = net.createConnection(
+        this.peerAddress.port,
+        this.peerAddress.address,
+        () => {
+          console.error(`${this.peerAddress} contacting peer`);
+        }
+      );
+      connection.on("data", (data) => {
+        this.onData(data);
+      });
+      connection.on("end", () => {
+        console.error(`${this.peerAddress} Disconnected`);
+      });
+
+      connection.on("error", (err) => {
+        console.error(`${this.peerAddress} Connection error: ${err}`);
+      });
+
+      connection.on("connect", () => {
+        console.error(`${this.peerAddress} connected, sending handshake`);
+        connection.write(Uint8Array.from([19]));
+        connection.write(toUint8Array("BitTorrent protocol"));
+        connection.write(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
+        connection.write(this.torrent.infoHash());
+        connection.write(this.ourPeerID);
+        this.connection = connection;
+        resolve();
+      });
+    });
+  }
   constructor(private torrent: TorrentFile, private peerAddress: AddressInfo) {
     super();
-
-    this.connection = net.createConnection(
-      peerAddress.port,
-      peerAddress.address,
-      () => {
-        console.error(`${peerAddress} contacting peer`);
-        // Send data to the server after the connection is established
-        this.connection.write(Uint8Array.from([19]));
-        this.connection.write(toUint8Array("BitTorrent protocol"));
-        this.connection.write(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
-        this.connection.write(torrent.infoHash());
-        this.connection.write(this.ourPeerID);
-      }
-    );
-    this.connection.on("data", (data) => {
-      this.onData(data);
-    });
-    this.connection.on("end", () => {
-      console.error(`${peerAddress} Disconnected`);
-    });
-
-    this.connection.on("error", (err) => {
-      console.error(`${peerAddress} Connection error: ${err}`);
-    });
+    this.connection = null;
   }
 }

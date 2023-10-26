@@ -13,9 +13,10 @@ async function downloadPiece(outfile, torrentFilename, index) {
     const peers = await (0, getPeers_1.getPeers)(torrent);
     const peer = peers[0];
     const peerAgent = new PeerAgent_1.PeerAgent(torrent, peer);
+    await peerAgent.connect();
     const piece = await _downloadPiece(peerAgent, parseInt(index));
     await promises_1.default.writeFile(outfile, piece);
-    peerAgent.close();
+    await peerAgent.close();
     return `Piece ${index} downloaded to ${outfile}`;
 }
 exports.downloadPiece = downloadPiece;

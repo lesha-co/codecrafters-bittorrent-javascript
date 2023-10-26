@@ -24,6 +24,7 @@ export async function _main(command: string, argv: string[]): Promise<string> {
       await TorrentFile.fromFilename(argv[0]),
       AddressInfo.fromString(argv[1])
     );
+    await peer.connect();
     return `Peer ID: ${await peer.getOtherPeerID()}`;
   }
   if (command === "download_piece") {
