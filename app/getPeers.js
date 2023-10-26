@@ -9,7 +9,7 @@ const blobToU8A = async (blob) => {
 };
 async function getPeers(t) {
     console.error(`contacting tracker...`);
-    const info_hash = (0, model_1.infoHash)(t);
+    const info_hash = t.infoHash();
     let info_hash_urle = "";
     for (let index = 0; index < info_hash.length; index++) {
         let hex = info_hash[index].toString(16);
@@ -24,7 +24,7 @@ async function getPeers(t) {
     url.searchParams.append("port", "6881");
     url.searchParams.append("uploaded", "0");
     url.searchParams.append("downloaded", "0");
-    url.searchParams.append("left", t.info.length.toString());
+    url.searchParams.append("left", t.metrics.file.bytes.toString());
     url.searchParams.append("compact", "1");
     const href = url.href + "&info_hash=" + info_hash_urle;
     const response = await fetch(href);

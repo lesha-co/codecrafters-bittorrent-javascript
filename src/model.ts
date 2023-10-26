@@ -1,6 +1,4 @@
-import { toString, readUInt16BE, readUInt32BE } from "./compat";
-import { encode } from "./encode";
-import * as crypto from "node:crypto";
+import { toString, readUInt16BE } from "./compat";
 
 export type Token =
   | string
@@ -24,17 +22,6 @@ export function ASCIIDigit(byte: number) {
   return byte - 48;
 }
 
-export type TorrentFile = {
-  announce: string;
-  "created by"?: string;
-  info: {
-    length: number;
-    name: string;
-    "piece length": number;
-    pieces: Uint8Array;
-  };
-};
-
 export class AddressInfo {
   constructor(public address: string, public port: number) {}
   public static fromString(s: string) {
@@ -50,14 +37,6 @@ export class AddressInfo {
   public toString() {
     return `${this.address}:${this.port}`;
   }
-}
-
-export function infoHash(t: TorrentFile): Uint8Array {
-  const bencodedInfo = encode(t.info);
-  const shasum = crypto.createHash("sha1");
-  shasum.update(bencodedInfo);
-  const digest = shasum.digest();
-  return digest;
 }
 
 export function ensureDict(t: Token): Record<string, Token> {
@@ -105,52 +84,4 @@ export function stringifyBuffers(t: Token): Token {
     newObject[key] = stringifyBuffers(t[key]);
   }
   return newObject;
-}
-
-export const BLOCK_LENGTH = 2 ** 14;
-
-export function getMetrics(torrent: TorrentFile, pieceIndex: number) {
-  const totalFileLength = torrent.info.length;
-  // file is divided into PIECES, each this bytes long
-  const pieceLength = torrent.info["piece length"];
-
-  // we need download this many pieces, last one will be smaller
-  const pieceCount = Math.ceil(totalFileLength / pieceLength);
-  // this is how long the last piece is
-  const lastPieceLenthBytes = totalFileLength % pieceLength;
-
-  // is this piece the last?
-  const isLastPiece = pieceIndex === pieceCount - 1;
-  // then, each piece is divided in blocks, this many:
-  const regularPieceBlockCount = pieceLength / BLOCK_LENGTH;
-  // since last piece is smaller, it has different number of blocks
-  const lastPieceBlockCount = Math.ceil(lastPieceLenthBytes / BLOCK_LENGTH);
-  // also last block is smaller
-  const lastBlockLength = lastPieceLenthBytes % BLOCK_LENGTH;
-
-  return {
-    file: {
-      bytes: totalFileLength,
-      pieces: pieceCount,
-    },
-    piece: {
-      current: {
-        isLast: isLastPiece,
-        blocks: isLastPiece ? lastPieceBlockCount : regularPieceBlockCount,
-        bytes: isLastPiece ? lastPieceLenthBytes : pieceLength,
-      },
-      regular: {
-        blocks: regularPieceBlockCount,
-        bytes: pieceLength,
-      },
-      last: {
-        blocks: lastPieceBlockCount,
-        bytes: lastPieceLenthBytes,
-      },
-    },
-    block: {
-      regular: { bytes: BLOCK_LENGTH },
-      last: { bytes: lastBlockLength },
-    },
-  };
 }

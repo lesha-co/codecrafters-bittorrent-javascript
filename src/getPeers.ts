@@ -1,11 +1,6 @@
+import { TorrentFile } from "./TorrentFile";
 import { decode } from "./decode";
-import {
-  AddressInfo,
-  TorrentFile,
-  ensureU8A,
-  ensureDict,
-  infoHash,
-} from "./model";
+import { AddressInfo, ensureU8A, ensureDict } from "./model";
 
 const blobToU8A = async (blob: Blob): Promise<Uint8Array> => {
   const arrayBuffer = await blob.arrayBuffer();
@@ -14,7 +9,7 @@ const blobToU8A = async (blob: Blob): Promise<Uint8Array> => {
 
 export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
   console.error(`contacting tracker...`);
-  const info_hash = infoHash(t);
+  const info_hash = t.infoHash();
   let info_hash_urle = "";
   for (let index = 0; index < info_hash.length; index++) {
     let hex = info_hash[index].toString(16);
@@ -28,7 +23,7 @@ export async function getPeers(t: TorrentFile): Promise<AddressInfo[]> {
   url.searchParams.append("port", "6881");
   url.searchParams.append("uploaded", "0");
   url.searchParams.append("downloaded", "0");
-  url.searchParams.append("left", t.info.length.toString());
+  url.searchParams.append("left", t.metrics.file.bytes.toString());
   url.searchParams.append("compact", "1");
   const href = url.href + "&info_hash=" + info_hash_urle;
   const response = await fetch(href);

@@ -1,20 +1,30 @@
 import fs from "node:fs/promises";
 import { PeerAgent } from "./PeerAgent";
+import { TorrentFile } from "./TorrentFile";
 import { getPeers } from "./getPeers";
-import { TorrentFile } from "./model";
+
 export async function downloadPiece(
-  outputFile: string,
-  torrent: TorrentFile,
-  pieceIndex: number
-): Promise<string> {
+  outfile: string,
+  torrentFilename: string,
+  index: string
+) {
+  const torrent = await TorrentFile.fromFilename(torrentFilename);
   const peers = await getPeers(torrent);
   const peer = peers[0];
   const peerAgent = new PeerAgent(torrent, peer);
+  const piece = await _downloadPiece(peerAgent, parseInt(index));
+  await fs.writeFile(outfile, piece);
+  peerAgent.close();
+  return `Piece ${index} downloaded to ${outfile}`;
+}
+
+export async function _downloadPiece(
+  peerAgent: PeerAgent,
+  pieceIndex: number
+): Promise<Uint8Array> {
   await peerAgent.getBitfield();
   await peerAgent.sendInterested();
   await peerAgent.waitForUnchoke();
   const piece = await peerAgent.downloadPiece(pieceIndex);
-  peerAgent.close();
-  await fs.writeFile(outputFile, piece);
-  return `Piece ${pieceIndex} downloaded to ${outputFile}`;
+  return piece;
 }
